@@ -1,6 +1,6 @@
 const express = require('express');
 const dotenv = require("dotenv")
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const cors = require("cors");
 dotenv.config();
 const app = express();
@@ -24,11 +24,34 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
     await client.connect();
-   
     await client.db('admin').command({ ping: 1 });
-    console.log(
+   
+   const db = client.db("drive-fleet-car");
+   const carsCollection = db.collection("explore-car")
+   
+   // find all data in explore-car
+   app.get('/explore-car', async (req, res) => {
+    const cursor = carsCollection.find();
+    const result = await cursor.toArray();
+    res.send(result)
+   })
+
+   // find one data in explore-car and get _id
+   app.get('/explore-car/:carId', async (req, res) => {
+    const { carId } = req.params;
+    const query = { _id: new ObjectId(carId) };
+    const result = await carsCollection.findOne(query);
+    res.send(result)
+   })
+   
+   
+   
+   
+   
+   
+   
+   console.log(
       'Pinged your deployment. You successfully connected to MongoDB!',
     );
   } finally {
