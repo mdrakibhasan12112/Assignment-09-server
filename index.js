@@ -1,6 +1,3 @@
-const dns = require('node:dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
-
 const express = require('express');
 const dotenv = require('dotenv');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
@@ -29,6 +26,7 @@ async function run() {
 
     const db = client.db('drive-fleet-car');
     const carsCollection = db.collection('explore-car');
+    const bookingCollection = db.collection('bookings')
 
     app.get('/explore-car', async (req, res) => {
       const result = await carsCollection.find().toArray()
@@ -68,6 +66,15 @@ async function run() {
       const result = await carsCollection.deleteOne({ _id: new ObjectId(id) })
       res.json(result)
     })
+
+    // sent booking data
+    app.post('/my-bookings', async (req, res) => {
+      const bookingData = req.body;
+      const result = await bookingCollection.insertOne(bookingData)
+      res.json(result)
+    })
+
+
     console.log(
       'Pinged your deployment. You successfully connected to MongoDB!',
     );
