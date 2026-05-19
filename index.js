@@ -1,17 +1,17 @@
+const dns = require('node:dns');
+dns.setServers(['8.8.8.8', '8.8.4.4']);
+
 const express = require('express');
-const dotenv = require("dotenv")
+const dotenv = require('dotenv');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-const cors = require("cors");
+const cors = require('cors');
 dotenv.config();
 const app = express();
-app.use(cors())
+app.use(cors());
+app.use(express.json());
 const port = process.env.PORT || 8080;
 
-// 
-// 
-
-const uri =
-  'mongodb+srv://drive-fleet-car:wgycOBqDcZfut8nI@cluster0.uqfhva4.mongodb.net/?appName=Cluster0';
+const uri = process.env.MONGODB_URI;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -26,32 +26,26 @@ async function run() {
   try {
     await client.connect();
     await client.db('admin').command({ ping: 1 });
-   
-   const db = client.db("drive-fleet-car");
-   const carsCollection = db.collection("explore-car")
-   
-   // find all data in explore-car
-   app.get('/explore-car', async (req, res) => {
-    const cursor = carsCollection.find();
-    const result = await cursor.toArray();
-    res.send(result)
-   })
 
-   // find one data in explore-car and get _id
-   app.get('/explore-car/:carId', async (req, res) => {
-    const { carId } = req.params;
-    const query = { _id: new ObjectId(carId) };
-    const result = await carsCollection.findOne(query);
-    res.send(result)
-   })
-   
-   
-   
-   
-   
-   
-   
-   console.log(
+    const db = client.db('drive-fleet-car');
+    const carsCollection = db.collection('explore-car');
+
+    app.get('/explore-car', async (req, res) => {
+      const result = await carsCollection.find().toArray()
+      res.json(result)
+    })
+
+
+    // find all data in explore-car
+    app.post('/explore-car', async (req, res) => {
+      const carsData = req.body;
+      console.log(carsData);
+      const result = await carsCollection.insertOne(carsData);
+      res.json(result);
+    });
+
+
+    console.log(
       'Pinged your deployment. You successfully connected to MongoDB!',
     );
   } finally {
@@ -60,9 +54,6 @@ async function run() {
   }
 }
 run().catch(console.dir);
-
-
-
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
