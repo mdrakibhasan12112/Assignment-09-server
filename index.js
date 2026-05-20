@@ -67,10 +67,25 @@ async function run() {
       res.json(result)
     })
 
-    // sent booking data
+    // sent booking data in forntend
+    app.get('/my-bookings/:userId', async (req, res) => {
+      const { userId } = req.params
+      const result = await bookingCollection.find({ userId: userId }).toArray()
+      res.json(result)
+    })
+
+
+    // recive booking data
     app.post('/my-bookings', async (req, res) => {
       const bookingData = req.body;
       const result = await bookingCollection.insertOne(bookingData)
+      res.json(result)
+    })
+
+    // delete booking card
+    app.delete('/my-bookings/:bookingId', async (req, res) => {
+      const { bookingId } = req.params;
+      const result = await bookingCollection.deleteOne({ _id: new ObjectId(bookingId) });
       res.json(result)
     })
 
