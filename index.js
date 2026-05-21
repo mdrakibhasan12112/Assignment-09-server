@@ -20,15 +20,17 @@ const client = new MongoClient(uri, {
   },
 });
 
-const JWKS = createRemoteJWKSet(new URL('http://localhost:3000/api/auth/jwks'));
+const JWKS = createRemoteJWKSet(
+  new URL(`${process.env.CLIENT_URL}/api/auth/jwks`),
+);
 
 // middleware
-const verifyToken =async (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   const authHeader = req.headers.authorization;
-    if (!authHeader) {
-      return res.status(401).json({
-        message: 'Unauthorized Access',
-      });
+  if (!authHeader) {
+    return res.status(401).json({
+      message: 'Unauthorized Access',
+    });
   }
   const token = authHeader.split(' ')[1];
   if (!token) {
@@ -37,20 +39,19 @@ const verifyToken =async (req, res, next) => {
     });
   }
 
-try {
-  const { payload } = await jwtVerify(token, JWKS)
-  console.log(payload);
-   next();
-} catch (error) {
-  return res.status(403).json({message:"something wrong"})
-}  
- 
+  try {
+    const { payload } = await jwtVerify(token, JWKS);
+    console.log(payload);
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: 'something wrong' });
+  }
 };
 
 async function run() {
   try {
-    await client.connect();
-    await client.db('admin').command({ ping: 1 });
+    // await client.connect();
+    // await client.db('admin').command({ ping: 1 });
 
     const db = client.db('drive-fleet-car');
     const carsCollection = db.collection('explore-car');
@@ -67,7 +68,6 @@ async function run() {
 
       let query = {};
 
-      // search by car name
       if (search) {
         query.CarName = {
           $regex: search,
@@ -75,7 +75,6 @@ async function run() {
         };
       }
 
-      // filter by car type
       if (type) {
         query.carType = type;
       }
@@ -86,7 +85,7 @@ async function run() {
     });
 
     // find all data in explore-car
-    app.post('/explore-car', async (req, res) => {
+    app.post('/explore-car', verifyToken, async (req, res) => {
       const carsData = req.body;
       console.log(carsData);
       const result = await carsCollection.insertOne(carsData);
@@ -101,7 +100,7 @@ async function run() {
     });
 
     // edit car model
-    app.patch('/explore-car/:id', async (req, res) => {
+    app.patch('/explore-car/:id', verifyToken, async (req, res) => {
       const { id } = req.params;
       const updatedData = req.body;
 
@@ -113,7 +112,7 @@ async function run() {
     });
 
     // delete car data
-    app.delete('/explore-car/:id', async (req, res) => {
+    app.delete('/explore-car/:id', verifyToken, async (req, res) => {
       const { id } = req.params;
       const result = await carsCollection.deleteOne({ _id: new ObjectId(id) });
       res.json(result);
@@ -127,14 +126,14 @@ async function run() {
     });
 
     // recive booking data
-    app.post('/my-bookings', async (req, res) => {
+    app.post('/my-bookings', verifyToken, async (req, res) => {
       const bookingData = req.body;
       const result = await bookingCollection.insertOne(bookingData);
       res.json(result);
     });
 
     // delete booking card
-    app.delete('/my-bookings/:bookingId', async (req, res) => {
+    app.delete('/my-bookings/:bookingId', verifyToken, async (req, res) => {
       const { bookingId } = req.params;
       const result = await bookingCollection.deleteOne({
         _id: new ObjectId(bookingId),
